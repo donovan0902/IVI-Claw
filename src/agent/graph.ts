@@ -2,9 +2,11 @@
  * Starter LangGraph.js Template
  * Make this code your own!
  */
-import { StateGraph } from "@langchain/langgraph";
+import { GraphNode, StateGraph } from "@langchain/langgraph";
 import { RunnableConfig } from "@langchain/core/runnables";
 import { StateAnnotation } from "./state.js";
+import { ChatOpenAI } from "@langchain/openai";
+import { SystemMessage } from "@langchain/core/messages";
 
 /**
  * Define a node, these do the work of the graph and should have most of the logic.
@@ -14,7 +16,7 @@ import { StateAnnotation } from "./state.js";
  * @returns Some subset of parameters of the graph state, used to update the state
  * for the edges and nodes executed next.
  */
-const callModel = async (
+const callModel: GraphNode<typeof StateAnnotation> = async (
   state: typeof StateAnnotation.State,
   _config: RunnableConfig,
 ): Promise<typeof StateAnnotation.Update> => {
@@ -57,13 +59,16 @@ const callModel = async (
    * ```
    */
   console.log("Current state:", state);
+  const model = new ChatOpenAI({
+    model: "gpt-5.4-mini",
+  });
+  const res = await model.invoke([
+    new SystemMessage("You are a helpful assistant for testing LangGraph.js."),
+    ...state.messages,
+  ]);
+
   return {
-    messages: [
-      {
-        role: "assistant",
-        content: `Hi there! How are you?`,
-      },
-    ],
+    messages: [res],
   };
 };
 
